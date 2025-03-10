@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Language" content="th, en">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progressive Quiz System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="welcome-screen" class="screen">
+            <h1>Progressive Quiz System</h1>
+            <div class="welcome-buttons">
+                <button id="start-main-btn">Start</button>
+                <button id="admin-btn">Admin</button>
+            </div>
+        </div>
+
+        <div id="registration-screen" class="screen hidden">
+            <h1>Test Taker Registration</h1>
+            <div class="user-form">
+                <div class="form-group">
+                    <label for="national-id">National ID</label>
+                    <input type="text" id="national-id" placeholder="Enter your 13-digit National ID">
+                    <div class="error-message" id="id-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="first-name">First Name</label>
+                    <input type="text" id="first-name" placeholder="First Name">
+                </div>
+                <div class="form-group">
+                    <label for="last-name">Last Name</label>
+                    <input type="text" id="last-name" placeholder="Last Name">
+                </div>
+                <div class="form-group">
+                    <label for="nick-name">Nickname</label>
+                    <input type="text" id="nick-name" placeholder="Nickname">
+                </div>
+                <button id="ready-btn">Ready to be Tested</button>
+                <button id="back-to-welcome-btn" class="secondary-btn">Back</button>
+            </div>
+        </div>
+
+        <div id="start-screen" class="screen hidden">
+            <h1>Welcome, <span id="user-name">User</span>!</h1>
+            <p>Current Level: <span id="user-current-level">1</span></p>
+            <button id="start-quiz-btn">Start Quiz</button>
+            <button id="logout-btn">Logout</button>
+        </div>
+
+        <div id="quiz-screen" class="screen hidden">
+            <div id="level-info">
+                <h2>Level: <span id="current-level">1</span></h2>
+            </div>
+            <div id="question-container">
+                <h3 id="question-text">Question goes here</h3>
+                <div id="options-container">
+                    <!-- Options will be added here -->
+                </div>
+            </div>
+            <button id="submit-btn">Submit Answer</button>
+            <div id="progress">
+                <span id="question-number">1</span> of <span id="total-questions">10</span>
+            </div>
+        </div>
+
+        <div id="result-screen" class="screen hidden">
+            <h2>Quiz Results</h2>
+            <p>Your score: <span id="score">0</span>/10</p>
+            <p id="level-result">Based on your score, you will proceed to level X</p>
+            <button id="continue-btn">Continue</button>
+        </div>
+
+        <div id="admin-screen" class="screen hidden">
+            <h2>Admin Panel</h2>
+            <div id="admin-login" class="admin-section">
+                <input type="password" id="admin-password" placeholder="Admin Password">
+                <button id="login-btn">Login</button>
+                <button id="admin-back-btn-login" class="secondary-btn">Back</button>
+            </div>
+            <div id="admin-controls" class="admin-section hidden">
+                <div class="admin-tabs">
+                    <button id="single-question-tab" class="tab-button">Add Single Question</button>
+                    <button id="batch-question-tab" class="tab-button">Add Multiple Questions</button>
+                    <button id="question-bank-tab" class="tab-button active">Question Bank</button>
+                    <button id="user-data-tab" class="tab-button">User Data</button>
+                </div>
+                
+                <div id="single-question-section" class="hidden">
+                    <h3>Add New Question</h3>
+                    <select id="level-select">
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                        <option value="4">Level 4</option>
+                        <option value="5">Level 5</option>
+                        <option value="6">Level 6</option>
+                        <option value="7">Level 7</option>
+                        <option value="8">Level 8</option>
+                        <option value="9">Level 9</option>
+                        <option value="10">Level 10</option>
+                    </select>
+                    <textarea id="question-input" placeholder="Enter question"></textarea>
+                    <div class="option-inputs">
+                        <input type="text" class="option-input" placeholder="Option 1">
+                        <input type="text" class="option-input" placeholder="Option 2">
+                        <input type="text" class="option-input" placeholder="Option 3">
+                        <input type="text" class="option-input" placeholder="Option 4">
+                    </div>
+                    <div class="correct-answer">
+                        <p>Correct Option:</p>
+                        <select id="correct-option">
+                            <option value="0">Option 1</option>
+                            <option value="1">Option 2</option>
+                            <option value="2">Option 3</option>
+                            <option value="3">Option 4</option>
+                        </select>
+                    </div>
+                    <button id="add-question-btn">Add Question</button>
+                </div>
+                
+                <div id="batch-question-section" class="hidden">
+                    <h3>Add Multiple Questions</h3>
+                    <div class="batch-level-select">
+                        <label>Level:</label>
+                        <select id="batch-level-select">
+                            <option value="1">Level 1</option>
+                            <option value="2">Level 2</option>
+                            <option value="3">Level 3</option>
+                            <option value="4">Level 4</option>
+                            <option value="5">Level 5</option>
+                            <option value="6">Level 6</option>
+                            <option value="7">Level 7</option>
+                            <option value="8">Level 8</option>
+                            <option value="9">Level 9</option>
+                            <option value="10">Level 10</option>
+                        </select>
+                        <button id="load-batch-form-btn">Load Form</button>
+                    </div>
+                    
+                    <div id="batch-questions-container">
+                        <!-- Question rows will be added here -->
+                    </div>
+                    
+                    <button id="save-batch-btn" class="hidden">Save All Questions</button>
+                </div>
+
+                <div id="question-bank-section">
+                    <h3>Question Bank</h3>
+                    <div class="bank-controls">
+                        <div class="bank-level-select">
+                            <label>Level:</label>
+                            <select id="bank-level-select">
+                                <option value="1">Level 1</option>
+                                <option value="2">Level 2</option>
+                                <option value="3">Level 3</option>
+                                <option value="4">Level 4</option>
+                                <option value="5">Level 5</option>
+                                <option value="6">Level 6</option>
+                                <option value="7">Level 7</option>
+                                <option value="8">Level 8</option>
+                                <option value="9">Level 9</option>
+                                <option value="10">Level 10</option>
+                            </select>
+                            <button id="load-bank-btn">Load Questions</button>
+                        </div>
+                        <div class="bank-actions">
+                            <button id="delete-selected-btn">Delete Selected</button>
+                        </div>
+                    </div>
+                    
+                    <div id="question-bank-container">
+                        <!-- Questions will be loaded here -->
+                        <div class="no-questions-message">
+                            Select a level and click "Load Questions" to view the question bank
+                        </div>
+                    </div>
+                </div>
+
+                <div id="user-data-section" class="hidden">
+                    <h3>User Data Management</h3>
+                    <div class="export-controls">
+                        <button id="export-users-btn">Export All Users Data</button>
+                    </div>
+                    <div id="users-container">
+                        <!-- Users will be loaded here -->
+                        <div class="no-users-message">
+                            No user data available
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="admin-back-btn">Back to Main</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add SheetJS library for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
