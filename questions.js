@@ -1,46 +1,12 @@
-// Sample questions for each level
-let allQuestions = {
-    1: [ // Level 1
-        {
-            question: "What is 5 + 7?",
-            options: ["10", "12", "13", "14"],
-            correctOptionIndex: 1 // Index of correct answer (0-based)
-        },
-        {
-            question: "Name the planet closest to the sun.",
-            options: ["Venus", "Mercury", "Earth", "Mars"],
-            correctOptionIndex: 1
-        },
-        {
-            question: "What is the capital of France?",
-            options: ["London", "Paris", "Berlin", "Rome"],
-            correctOptionIndex: 1
-        }
-        // Add more questions for level 1 as needed
-    ],
-    2: [ // Level 2
-        {
-            question: "What is the square root of 144?",
-            options: ["10", "12", "14", "16"],
-            correctOptionIndex: 1
-        },
-        {
-            question: "Name the largest ocean on Earth.",
-            options: ["Atlantic", "Pacific", "Indian", "Arctic"],
-            correctOptionIndex: 1
-        }
-        // Add more questions for level 2 as needed
-    ],
-    // Continue for all 10 levels
-};
+// Initialize empty questions structure
+let allQuestions = {};
 
 // Progression rules
 let progressionRules = {
     1: { // Level 1
-        "0-3": 1,   // Scores 0-3: Stay at Level 1
-        "4-6": 2,   // Scores 4-6: Go to Level 2
-        "7-8": 3,   // Scores 7-8: Go to Level 3
-        "9-10": 4   // Scores 9-10: Go to Level 4
+        "0-6": 1,   // Scores 0-6: Stay at Level 1
+        "7-8": 2,   // Scores 7-8: Go to Level 2
+        "9-10": 3,   // Scores 9-10: Go to Level 3
     },
     2: { // Level 2
         "0-3": 1,
@@ -88,7 +54,6 @@ let progressionRules = {
         "0-3": 8,
         "4-7": 9,
         "8-10": 10,
-
     },
     10: { // Level 10
         "0-5": 9,
@@ -99,7 +64,6 @@ let progressionRules = {
 };
 
 // Make variables accessible in the global scope for Firebase integration
-// These conditionals ensure these variables are only defined if they don't already exist
 if (typeof window !== 'undefined') {
     // Expose the variables to the global scope for other scripts to access
     window.allQuestions = allQuestions;
