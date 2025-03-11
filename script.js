@@ -7,6 +7,9 @@ let selectedOption = null;
 let currentUser = null;
 const users = {};
 
+// Use the existing database reference from firebase-config.js instead of creating a new one
+// const database = firebase.database(); - This was causing the error
+
 // DOM Elements - Welcome Screen
 const welcomeScreen = document.getElementById('welcome-screen');
 const startMainBtn = document.getElementById('start-main-btn');
@@ -82,87 +85,188 @@ const questionBankContainer = document.getElementById('question-bank-container')
 const exportUsersBtn = document.getElementById('export-users-btn');
 const usersContainer = document.getElementById('users-container');
 
+// Debug function to check element existence
+function debugElements() {
+    console.log("Checking DOM elements:");
+    console.log("Welcome screen exists:", !!welcomeScreen);
+    console.log("Start button exists:", !!startMainBtn);
+    console.log("Admin button exists:", !!adminBtn);
+    
+    if (!startMainBtn) {
+        console.error("Start button not found in DOM");
+    }
+    
+    if (!adminBtn) {
+        console.error("Admin button not found in DOM");
+    }
+}
+
 // Initialize the application
 function init() {
+    console.log("Initializing application...");
+    debugElements();
+    
     // Add event listeners - Welcome Screen
-    startMainBtn.addEventListener('click', showRegistrationScreen);
-    adminBtn.addEventListener('click', showAdminScreen);
+    if (startMainBtn) {
+        startMainBtn.addEventListener('click', function() {
+            console.log("Start button clicked");
+            showRegistrationScreen();
+        });
+    }
+    
+    if (adminBtn) {
+        adminBtn.addEventListener('click', function() {
+            console.log("Admin button clicked");
+            showAdminScreen();
+        });
+    }
     
     // Add event listeners - Registration Screen
-    readyBtn.addEventListener('click', handleRegistration);
-    backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
-    nationalIdInput.addEventListener('input', validateNationalId);
+    if (readyBtn) {
+        readyBtn.addEventListener('click', handleRegistration);
+    }
+    
+    if (backToWelcomeBtn) {
+        backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (nationalIdInput) {
+        nationalIdInput.addEventListener('input', validateNationalId);
+    }
     
     // Add event listeners - Start Screen
-    startQuizBtn.addEventListener('click', startQuiz);
-    logoutBtn.addEventListener('click', handleLogout);
+    if (startQuizBtn) {
+        startQuizBtn.addEventListener('click', startQuiz);
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
     
     // Add event listeners - Quiz Screen
-    submitBtn.addEventListener('click', submitAnswer);
+    if (submitBtn) {
+        submitBtn.addEventListener('click', submitAnswer);
+    }
     
     // Add event listeners - Result Screen
-    continueBtn.addEventListener('click', continueToNextLevel);
+    if (continueBtn) {
+        continueBtn.addEventListener('click', continueToNextLevel);
+    }
     
     // Add event listeners - Admin Screen
-    loginBtn.addEventListener('click', adminLoginHandler);
-    adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
-    adminBackBtn.addEventListener('click', showWelcomeScreen);
+    if (loginBtn) {
+        loginBtn.addEventListener('click', adminLoginHandler);
+    }
+    
+    if (adminBackBtnLogin) {
+        adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (adminBackBtn) {
+        adminBackBtn.addEventListener('click', showWelcomeScreen);
+    }
     
     // Add event listeners - Admin Tabs
-    singleQuestionTab.addEventListener('click', () => {
-        setActiveTab('single-question-tab');
-        showAdminSection('single-question-section');
-    });
+    if (singleQuestionTab) {
+        singleQuestionTab.addEventListener('click', () => {
+            setActiveTab('single-question-tab');
+            showAdminSection('single-question-section');
+        });
+    }
     
-    batchQuestionTab.addEventListener('click', () => {
-        setActiveTab('batch-question-tab');
-        showAdminSection('batch-question-section');
-    });
+    if (batchQuestionTab) {
+        batchQuestionTab.addEventListener('click', () => {
+            setActiveTab('batch-question-tab');
+            showAdminSection('batch-question-section');
+        });
+    }
     
-    questionBankTab.addEventListener('click', () => {
-        setActiveTab('question-bank-tab');
-        showAdminSection('question-bank-section');
-    });
+    if (questionBankTab) {
+        questionBankTab.addEventListener('click', () => {
+            setActiveTab('question-bank-tab');
+            showAdminSection('question-bank-section');
+        });
+    }
     
-    userDataTab.addEventListener('click', () => {
-        setActiveTab('user-data-tab');
-        showAdminSection('user-data-section');
-        loadUserData();
-    });
+    if (userDataTab) {
+        userDataTab.addEventListener('click', () => {
+            setActiveTab('user-data-tab');
+            showAdminSection('user-data-section');
+            loadUserData();
+        });
+    }
     
     // Add event listeners - Question Management
-    addQuestionBtn.addEventListener('click', addNewQuestion);
-    loadBatchFormBtn.addEventListener('click', () => {
-        showBatchQuestionInput();
-        saveBatchBtn.classList.remove('hidden');
-    });
-    saveBatchBtn.addEventListener('click', saveBatchQuestions);
-    loadBankBtn.addEventListener('click', loadQuestionBank);
-    deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
+    if (addQuestionBtn) {
+        addQuestionBtn.addEventListener('click', addNewQuestion);
+    }
+    
+    if (loadBatchFormBtn) {
+        loadBatchFormBtn.addEventListener('click', () => {
+            showBatchQuestionInput();
+            if (saveBatchBtn) saveBatchBtn.classList.remove('hidden');
+        });
+    }
+    
+    if (saveBatchBtn) {
+        saveBatchBtn.addEventListener('click', saveBatchQuestions);
+    }
+    
+    if (loadBankBtn) {
+        loadBankBtn.addEventListener('click', loadQuestionBank);
+    }
+    
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
+    }
     
     // Add event listeners - User Data
-    exportUsersBtn.addEventListener('click', exportUserData);
+    if (exportUsersBtn) {
+        exportUsersBtn.addEventListener('click', exportUserData);
+    }
     
-    // Load questions from localStorage if available
-    loadQuestionsFromStorage();
-    
-    // Load users from localStorage if available
-    loadUsersFromStorage();
-    
-    // Show welcome screen by default
-    hideAllScreens();
-    showScreen(welcomeScreen);
+    try {
+        // Load questions and users from Firebase
+        Promise.all([
+            loadQuestionsFromStorage(),
+            loadUsersFromStorage()
+        ]).then(() => {
+            console.log("Data loaded successfully");
+            // Show welcome screen by default
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        }).catch(error => {
+            console.error("Error initializing app:", error);
+            // Still show welcome screen even if there's an error
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        });
+    } catch (error) {
+        console.error("Error during app initialization:", error);
+        // Show welcome screen as fallback
+        hideAllScreens();
+        showScreen(welcomeScreen);
+    }
+}
 
 // Show Admin Section
 function showAdminSection(sectionId) {
     // Hide all sections
-    document.getElementById('single-question-section').classList.add('hidden');
-    document.getElementById('batch-question-section').classList.add('hidden');
-    document.getElementById('question-bank-section').classList.add('hidden');
-    document.getElementById('user-data-section').classList.add('hidden');
+    const sections = [
+        'single-question-section',
+        'batch-question-section',
+        'question-bank-section',
+        'user-data-section'
+    ];
+    
+    sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) element.classList.add('hidden');
+    });
     
     // Show selected section
-    document.getElementById(sectionId).classList.remove('hidden');
+    const selectedSection = document.getElementById(sectionId);
+    if (selectedSection) selectedSection.classList.remove('hidden');
 }
 
 // Set active tab
@@ -173,24 +277,27 @@ function setActiveTab(tabId) {
     });
     
     // Add active class to selected tab
-    document.getElementById(tabId).classList.add('active');
+    const tab = document.getElementById(tabId);
+    if (tab) tab.classList.add('active');
 }
 
 // Show registration screen
 function showRegistrationScreen() {
+    console.log("Showing registration screen");
     hideAllScreens();
     showScreen(registrationScreen);
     
     // Clear form fields
-    nationalIdInput.value = '';
-    firstNameInput.value = '';
-    lastNameInput.value = '';
-    nickNameInput.value = '';
-    idError.textContent = '';
+    if (nationalIdInput) nationalIdInput.value = '';
+    if (firstNameInput) firstNameInput.value = '';
+    if (lastNameInput) lastNameInput.value = '';
+    if (nickNameInput) nickNameInput.value = '';
+    if (idError) idError.textContent = '';
 }
 
 // Show welcome screen
 function showWelcomeScreen() {
+    console.log("Showing welcome screen");
     hideAllScreens();
     showScreen(welcomeScreen);
 }
@@ -251,7 +358,7 @@ function handleRegistration() {
     // Set current user
     currentUser = users[userId];
     
-    // Save users to localStorage
+    // Save users to Firebase
     saveUsersToStorage();
     
     // Start the quiz directly
@@ -265,30 +372,51 @@ function handleLogout() {
     showScreen(welcomeScreen);
 }
 
-// Load users from localStorage
+// Load users from Firebase
 function loadUsersFromStorage() {
-    const savedUsers = localStorage.getItem('quizUsers');
-    if (savedUsers) {
-        Object.assign(users, JSON.parse(savedUsers));
-    }
+    return database.ref('users').once('value')
+        .then((snapshot) => {
+            const savedUsers = snapshot.val();
+            if (savedUsers) {
+                Object.assign(users, savedUsers);
+            }
+        })
+        .catch((error) => {
+            console.error("Error loading users:", error);
+        });
 }
 
-// Save users to localStorage
+// Save users to Firebase
 function saveUsersToStorage() {
-    localStorage.setItem('quizUsers', JSON.stringify(users));
+    return database.ref('users').set(users)
+        .catch((error) => {
+            console.error("Error saving users:", error);
+            alert("There was an error saving user data. Please try again.");
+        });
 }
 
-// Load questions from localStorage
+// Load questions from Firebase
 function loadQuestionsFromStorage() {
-    const savedQuestions = localStorage.getItem('quizQuestions');
-    if (savedQuestions) {
-        Object.assign(allQuestions, JSON.parse(savedQuestions));
-    }
+    return database.ref('questions').once('value')
+        .then((snapshot) => {
+            const savedQuestions = snapshot.val();
+            if (savedQuestions) {
+                // Merge with existing questions (from questions.js)
+                Object.assign(allQuestions, savedQuestions);
+            }
+        })
+        .catch((error) => {
+            console.error("Error loading questions:", error);
+        });
 }
 
-// Save questions to localStorage
+// Save questions to Firebase
 function saveQuestionsToStorage() {
-    localStorage.setItem('quizQuestions', JSON.stringify(allQuestions));
+    return database.ref('questions').set(allQuestions)
+        .catch((error) => {
+            console.error("Error saving questions:", error);
+            alert("There was an error saving questions. Please try again.");
+        });
 }
 
 // Start the quiz
@@ -465,7 +593,7 @@ function showResults() {
             currentUser.level = nextLevel;
         }
         
-        // Save users to localStorage
+        // Save users to Firebase
         saveUsersToStorage();
     }
 }
@@ -503,13 +631,14 @@ function continueToNextLevel() {
 
 // Admin functions
 function showAdminScreen() {
+    console.log("Showing admin screen");
     hideAllScreens();
     showScreen(adminScreen);
     
     // Reset admin form
-    adminPassword.value = '';
-    adminControls.classList.add('hidden');
-    adminLogin.classList.remove('hidden');
+    if (adminPassword) adminPassword.value = '';
+    if (adminControls) adminControls.classList.add('hidden');
+    if (adminLogin) adminLogin.classList.remove('hidden');
 }
 
 // Admin login handler
@@ -572,17 +701,17 @@ function addNewQuestion() {
         correctOptionIndex
     });
     
-    // Save to localStorage
-    saveQuestionsToStorage();
-    
-    // Reset form
-    questionInput.value = '';
-    optionInputs.forEach(input => {
-        input.value = '';
+    // Save to Firebase
+    saveQuestionsToStorage().then(() => {
+        // Reset form
+        questionInput.value = '';
+        optionInputs.forEach(input => {
+            input.value = '';
+        });
+        correctOption.value = '0';
+        
+        alert('Question added successfully!');
     });
-    correctOption.value = '0';
-    
-    alert('Question added successfully!');
 }
 
 // Show batch question input form
@@ -658,10 +787,10 @@ function saveBatchQuestions() {
         questionsAdded++;
     });
     
-    // Save to localStorage
-    saveQuestionsToStorage();
-    
-    alert(`${questionsAdded} questions added successfully to Level ${level}!`);
+    // Save to Firebase
+    saveQuestionsToStorage().then(() => {
+        alert(`${questionsAdded} questions added successfully to Level ${level}!`);
+    });
 }
 
 // Load question bank for selected level
@@ -741,12 +870,14 @@ function loadQuestionBank() {
     
     // Add event listener to "select all" checkbox
     const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    selectAllCheckbox.addEventListener('change', () => {
-        const checkboxes = document.querySelectorAll('.question-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = selectAllCheckbox.checked;
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.question-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
         });
-    });
+    }
 }
 
 // Delete selected questions
@@ -774,13 +905,13 @@ function deleteSelectedQuestions() {
         allQuestions[level].splice(index, 1);
     });
     
-    // Save to localStorage
-    saveQuestionsToStorage();
-    
-    // Reload question bank
-    loadQuestionBank();
-    
-    alert(`${selectedCheckboxes.length} question(s) deleted successfully!`);
+    // Save to Firebase
+    saveQuestionsToStorage().then(() => {
+        // Reload question bank
+        loadQuestionBank();
+        
+        alert(`${selectedCheckboxes.length} question(s) deleted successfully!`);
+    });
 }
 
 // Load user data in admin panel
@@ -850,8 +981,7 @@ function loadUserData() {
     usersContainer.appendChild(table);
 }
 
-    
-  // Export user data to Excel
+// Export user data to Excel
 function exportUserData() {
     const userIds = Object.keys(users);
     
@@ -860,7 +990,7 @@ function exportUserData() {
         return;
     }
     
-    // Create data for export (First two sheets remain the same)
+    // Create data for export
     const exportData = [
         ['National ID', 'First Name', 'Last Name', 'Nickname', 'Current Level', 'Test History']
     ];
@@ -899,19 +1029,21 @@ function exportUserData() {
     userIds.forEach(userId => {
         const user = users[userId];
         
-        user.history.forEach(entry => {
-            historyData.push([
-                user.nationalId,
-                `${user.firstName} ${user.lastName}`,
-                entry.date,
-                entry.level,
-                entry.score,
-                entry.result
-            ]);
-        });
+        if (user.history) {
+            user.history.forEach(entry => {
+                historyData.push([
+                    user.nationalId,
+                    `${user.firstName} ${user.lastName}`,
+                    entry.date,
+                    entry.level,
+                    entry.score,
+                    entry.result
+                ]);
+            });
+        }
     });
     
-    // NEW: Create incorrect answers sheet
+    // Create incorrect answers sheet
     const incorrectAnswersData = [
         ['National ID', 'Name', 'Date', 'Level', 'Question', 'User Answer', 'Correct Answer']
     ];
@@ -962,37 +1094,50 @@ function exportUserData() {
     // Generate Excel file and trigger download
     XLSX.writeFile(wb, 'quiz_user_data.xlsx');
 }
-    
-    // Create workbook with two sheets
-    const wb = XLSX.utils.book_new();
-    
-    // Add users sheet
-    const usersWs = XLSX.utils.aoa_to_sheet(exportData);
-    XLSX.utils.book_append_sheet(wb, usersWs, 'Users');
-    
-    // Add history sheet if there's history data
-    if (historyData.length > 1) {
-        const historyWs = XLSX.utils.aoa_to_sheet(historyData);
-        XLSX.utils.book_append_sheet(wb, historyWs, 'Test History');
-    }
-    
-    // Generate Excel file and trigger download
-    XLSX.writeFile(wb, 'quiz_user_data.xlsx');
-}
 
 // Helper functions
 function hideAllScreens() {
-    welcomeScreen.classList.add('hidden');
-    registrationScreen.classList.add('hidden');
-    startScreen.classList.add('hidden');
-    quizScreen.classList.add('hidden');
-    resultScreen.classList.add('hidden');
-    adminScreen.classList.add('hidden');
+    if (welcomeScreen) welcomeScreen.classList.add('hidden');
+    if (registrationScreen) registrationScreen.classList.add('hidden');
+    if (startScreen) startScreen.classList.add('hidden');
+    if (quizScreen) quizScreen.classList.add('hidden');
+    if (resultScreen) resultScreen.classList.add('hidden');
+    if (adminScreen) adminScreen.classList.add('hidden');
 }
 
 function showScreen(screen) {
-    screen.classList.remove('hidden');
+    if (screen) {
+        screen.classList.remove('hidden');
+    } else {
+        console.error("Attempted to show a screen that doesn't exist");
+    }
+}
+
+// Check connection status with Firebase
+function checkFirebaseConnection() {
+    try {
+        const connectedRef = firebase.database().ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            if (snap.val() === true) {
+                console.log("Connected to Firebase");
+            } else {
+                console.log("Disconnected from Firebase");
+            }
+        });
+    } catch (error) {
+        console.error("Error checking Firebase connection:", error);
+    }
 }
 
 // Initialize the app when the page loads
-window.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded");
+    debugElements();
+    
+    try {
+        checkFirebaseConnection();
+        init();
+    } catch (e) {
+        console.error("Error during initialization:", e);
+    }
+});

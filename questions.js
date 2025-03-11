@@ -1,5 +1,5 @@
 // Sample questions for each level
-const allQuestions = {
+let allQuestions = {
     1: [ // Level 1
         {
             question: "What is 5 + 7?",
@@ -35,7 +35,7 @@ const allQuestions = {
 };
 
 // Progression rules
-const progressionRules = {
+let progressionRules = {
     1: { // Level 1
         "0-3": 1,   // Scores 0-3: Stay at Level 1
         "4-6": 2,   // Scores 4-6: Go to Level 2
@@ -97,3 +97,11 @@ const progressionRules = {
         "10": "หนึ่งในใต้หล้า ท้องฟ้าสีชมพูวว"
     }
 };
+
+// Make variables accessible in the global scope for Firebase integration
+// These conditionals ensure these variables are only defined if they don't already exist
+if (typeof window !== 'undefined') {
+    // Expose the variables to the global scope for other scripts to access
+    window.allQuestions = allQuestions;
+    window.progressionRules = progressionRules;
+}
