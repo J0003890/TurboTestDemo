@@ -401,8 +401,16 @@ function loadQuestionsFromStorage() {
         .then((snapshot) => {
             const savedQuestions = snapshot.val();
             if (savedQuestions) {
-                // Merge with existing questions (from questions.js)
+                // REPLACE instead of merge
+                // Clear all existing questions first
+                allQuestions = {}; 
+                // Then add Firebase questions
                 Object.assign(allQuestions, savedQuestions);
+                console.log("Questions loaded from Firebase");
+            } else {
+                // If no questions in Firebase, ensure we have an empty question bank
+                allQuestions = {};
+                console.log("No questions found in Firebase");
             }
         })
         .catch((error) => {
