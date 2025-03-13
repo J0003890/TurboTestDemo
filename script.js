@@ -85,6 +85,21 @@ const questionBankContainer = document.getElementById('question-bank-container')
 const exportUsersBtn = document.getElementById('export-users-btn');
 const usersContainer = document.getElementById('users-container');
 
+// Level 10 title mapping based on score
+const level10Titles = {
+    10: "Ascended Deity",
+    9: "Eternal Emperor",
+    8: "Celestial Warlord",
+    7: "Architect of Destiny",
+    6: "Omniscient Strategist",
+    5: "Mastermind Sovereign",
+    4: "Shadow Overlord",
+    3: "Golden Conqueror",
+    2: "Warforged Titan",
+    1: "Stormborn Tactician",
+    0: "Stormborn Tactician" // Fallback for score 0
+};
+
 // Debug function to check element existence
 function debugElements() {
     console.log("Checking DOM elements:");
@@ -101,184 +116,24 @@ function debugElements() {
     }
 }
 
-// Initialize the application
-function init() {
-    console.log("Initializing application...");
-    debugElements();
-    
-    // Add event listeners - Welcome Screen
-    if (startMainBtn) {
-        startMainBtn.addEventListener('click', function() {
-            console.log("Start button clicked");
-            showRegistrationScreen();
-        });
-    }
-    
-    if (adminBtn) {
-        adminBtn.addEventListener('click', function() {
-            console.log("Admin button clicked");
-            showAdminScreen();
-        });
-    }
-    
-    // Add event listeners - Registration Screen
-    if (readyBtn) {
-        readyBtn.addEventListener('click', handleRegistration);
-    }
-    
-    if (backToWelcomeBtn) {
-        backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
-    }
-    
-    if (nationalIdInput) {
-        nationalIdInput.addEventListener('input', validateNationalId);
-    }
-    
-    // Add event listeners - Start Screen
-    if (startQuizBtn) {
-        startQuizBtn.addEventListener('click', startQuiz);
-    }
-    
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-    
-    // Add event listeners - Quiz Screen
-    if (submitBtn) {
-        submitBtn.addEventListener('click', submitAnswer);
-    }
-    
-    // Add event listeners - Result Screen
-    if (continueBtn) {
-        continueBtn.addEventListener('click', continueToNextLevel);
-    }
-    
-    // Add event listeners - Admin Screen
-    if (loginBtn) {
-        loginBtn.addEventListener('click', adminLoginHandler);
-    }
-    
-    if (adminBackBtnLogin) {
-        adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
-    }
-    
-    if (adminBackBtn) {
-        adminBackBtn.addEventListener('click', showWelcomeScreen);
-    }
-    
-    // Add event listeners - Admin Tabs
-    if (singleQuestionTab) {
-        singleQuestionTab.addEventListener('click', () => {
-            setActiveTab('single-question-tab');
-            showAdminSection('single-question-section');
-        });
-    }
-    
-    if (batchQuestionTab) {
-        batchQuestionTab.addEventListener('click', () => {
-            setActiveTab('batch-question-tab');
-            showAdminSection('batch-question-section');
-        });
-    }
-    
-    if (questionBankTab) {
-        questionBankTab.addEventListener('click', () => {
-            setActiveTab('question-bank-tab');
-            showAdminSection('question-bank-section');
-        });
-    }
-    
-    if (userDataTab) {
-        userDataTab.addEventListener('click', () => {
-            setActiveTab('user-data-tab');
-            showAdminSection('user-data-section');
-            loadUserData();
-        });
-    }
-    
-    // Add event listeners - Question Management
-    if (addQuestionBtn) {
-        addQuestionBtn.addEventListener('click', addNewQuestion);
-    }
-    
-    if (loadBatchFormBtn) {
-        loadBatchFormBtn.addEventListener('click', () => {
-            showBatchQuestionInput();
-            if (saveBatchBtn) saveBatchBtn.classList.remove('hidden');
-        });
-    }
-    
-    if (saveBatchBtn) {
-        saveBatchBtn.addEventListener('click', saveBatchQuestions);
-    }
-    
-    if (loadBankBtn) {
-        loadBankBtn.addEventListener('click', loadQuestionBank);
-    }
-    
-    if (deleteSelectedBtn) {
-        deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
-    }
-    
-    // Add event listeners - User Data
-    if (exportUsersBtn) {
-        exportUsersBtn.addEventListener('click', exportUserData);
-    }
-    
-    try {
-        // Load questions and users from Firebase
-        Promise.all([
-            loadQuestionsFromStorage(),
-            loadUsersFromStorage()
-        ]).then(() => {
-            console.log("Data loaded successfully");
-            // Show welcome screen by default
-            hideAllScreens();
-            showScreen(welcomeScreen);
-        }).catch(error => {
-            console.error("Error initializing app:", error);
-            // Still show welcome screen even if there's an error
-            hideAllScreens();
-            showScreen(welcomeScreen);
-        });
-    } catch (error) {
-        console.error("Error during app initialization:", error);
-        // Show welcome screen as fallback
-        hideAllScreens();
-        showScreen(welcomeScreen);
-    }
+// Helper functions
+function hideAllScreens() {
+    console.log("Hiding all screens");
+    if (welcomeScreen) welcomeScreen.classList.add('hidden');
+    if (registrationScreen) registrationScreen.classList.add('hidden');
+    if (startScreen) startScreen.classList.add('hidden');
+    if (quizScreen) quizScreen.classList.add('hidden');
+    if (resultScreen) resultScreen.classList.add('hidden');
+    if (adminScreen) adminScreen.classList.add('hidden');
 }
 
-// Show Admin Section
-function showAdminSection(sectionId) {
-    // Hide all sections
-    const sections = [
-        'single-question-section',
-        'batch-question-section',
-        'question-bank-section',
-        'user-data-section'
-    ];
-    
-    sections.forEach(section => {
-        const element = document.getElementById(section);
-        if (element) element.classList.add('hidden');
-    });
-    
-    // Show selected section
-    const selectedSection = document.getElementById(sectionId);
-    if (selectedSection) selectedSection.classList.remove('hidden');
-}
-
-// Set active tab
-function setActiveTab(tabId) {
-    // Remove active class from all tabs
-    document.querySelectorAll('.tab-button').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Add active class to selected tab
-    const tab = document.getElementById(tabId);
-    if (tab) tab.classList.add('active');
+function showScreen(screen) {
+    console.log("Showing screen:", screen?.id);
+    if (screen) {
+        screen.classList.remove('hidden');
+    } else {
+        console.error("Attempted to show a screen that doesn't exist");
+    }
 }
 
 // Show registration screen
@@ -302,6 +157,68 @@ function showWelcomeScreen() {
     showScreen(welcomeScreen);
 }
 
+// Show Admin Screen
+function showAdminScreen() {
+    console.log("Showing admin screen");
+    hideAllScreens();
+    showScreen(adminScreen);
+    
+    // Reset admin form
+    if (adminPassword) adminPassword.value = '';
+    if (adminControls) adminControls.classList.add('hidden');
+    if (adminLogin) adminLogin.classList.remove('hidden');
+}
+
+// Check connection status with Firebase
+function checkFirebaseConnection() {
+    try {
+        const connectedRef = firebase.database().ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            if (snap.val() === true) {
+                console.log("Connected to Firebase");
+            } else {
+                console.log("Disconnected from Firebase");
+            }
+        });
+    } catch (error) {
+        console.error("Error checking Firebase connection:", error);
+    }
+}
+
+// Delete selected questions - FIXED THE MISSING BRACKET HERE
+function deleteSelectedQuestions() {
+    const level = parseInt(bankLevelSelect.value);
+    const selectedCheckboxes = document.querySelectorAll('.question-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('No questions selected for deletion');
+        return;
+    } // FIXED: Added the missing closing bracket here
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete ${selectedCheckboxes.length} question(s)?`)) {
+        return;
+    }
+    
+    // Get indices to delete (in descending order to avoid index shifting issues)
+    const indicesToDelete = Array.from(selectedCheckboxes)
+        .map(checkbox => parseInt(checkbox.dataset.index))
+        .sort((a, b) => b - a); // Sort in descending order
+    
+    // Remove questions
+    indicesToDelete.forEach(index => {
+        allQuestions[level].splice(index, 1);
+    });
+    
+    // Save to Firebase
+    saveQuestionsToStorage().then(() => {
+        // Reload question bank
+        loadQuestionBank();
+        
+        alert(`${selectedCheckboxes.length} question(s) deleted successfully!`);
+    });
+}
+
 // Validate National ID
 function validateNationalId() {
     const value = nationalIdInput.value.replace(/[^0-9]/g, '');
@@ -315,6 +232,38 @@ function validateNationalId() {
     } else {
         idError.textContent = '';
     }
+}
+
+// Set active tab
+function setActiveTab(tabId) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab-button').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Add active class to selected tab
+    const tab = document.getElementById(tabId);
+    if (tab) tab.classList.add('active');
+}
+
+// Show Admin Section
+function showAdminSection(sectionId) {
+    // Hide all sections
+    const sections = [
+        'single-question-section',
+        'batch-question-section',
+        'question-bank-section',
+        'user-data-section'
+    ];
+    
+    sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) element.classList.add('hidden');
+    });
+    
+    // Show selected section
+    const selectedSection = document.getElementById(sectionId);
+    if (selectedSection) selectedSection.classList.remove('hidden');
 }
 
 // Handle registration
@@ -346,13 +295,21 @@ function handleRegistration() {
             lastName: lastName,
             nickName: nickName,
             level: 1,  // Always start at level 1
-            history: []
+            history: [],
+            completed: false // New flag to track completion status
         };
     } else {
         // Existing user - update info but keep level
         users[userId].firstName = firstName;
         users[userId].lastName = lastName;
         users[userId].nickName = nickName;
+        
+        // Check if user has already completed the program
+        if (users[userId].completed) {
+            alert("You have already completed all tests. Thank you for participating!");
+            showWelcomeScreen();
+            return;
+        }
     }
     
     // Set current user
@@ -432,6 +389,22 @@ function startQuiz() {
     if (!currentUser) {
         hideAllScreens();
         showScreen(registrationScreen);
+        return;
+    }
+    
+    // Check if user has already completed the program
+    if (currentUser.completed) {
+        alert("You have already completed all tests. Thank you for participating!");
+        showWelcomeScreen();
+        return;
+    }
+    
+    // Check if user has already taken 10 tests
+    if (currentUser.history && currentUser.history.length >= 10) {
+        currentUser.completed = true;
+        saveUsersToStorage();
+        alert("You have reached the maximum number of tests (10). Thank you for participating!");
+        showWelcomeScreen();
         return;
     }
     
@@ -562,14 +535,38 @@ function showResults() {
     // Determine new level based on progression rules
     const nextLevel = determineNextLevel();
     
+    // Check if user has completed the program (reached level 10)
+    const hasCompletedLevel10 = currentLevel === 10;
+    // Count total tests taken (including this one)
+    const testsTaken = currentUser.history ? currentUser.history.length + 1 : 1;
+    const hasReachedMaxTests = testsTaken >= 10;
+    
     // Prepare result message and record history
     let resultMessage;
-    if (nextLevel === "complete") {
-        resultMessage = "Completed the program with highest honors";
-        levelResultElement.textContent = "Congratulations! You have completed the program with highest honors!";
-    } else if (nextLevel === "mastery") {
-        resultMessage = "Reached pinnacle of knowledge";
-        levelResultElement.textContent = "Incredible! You have reached the pinnacle of knowledge in this domain!";
+    let completionTitle = '';
+    
+    // Set completion status
+    if (hasCompletedLevel10 || hasReachedMaxTests) {
+        currentUser.completed = true;
+    }
+    
+    // Determine message based on completion status
+    if (hasCompletedLevel10) {
+        // User has completed level 10
+        completionTitle = level10Titles[score] || "Stormborn Tactician";
+        resultMessage = `Completed at Level 10 with title: ${completionTitle}`;
+        
+        // Create a more dramatic title display with custom class for styling
+        levelResultElement.innerHTML = `
+            <p>Test Completed! You have received the title of</p>
+            <div class="title-display">
+                <span class="title-effect title-${completionTitle.toLowerCase().replace(/\s+/g, '-')}">${completionTitle}</span>
+            </div>
+        `;
+    } else if (hasReachedMaxTests) {
+        // User has reached 10 tests
+        resultMessage = `Completed after ${testsTaken} tests at Level ${currentLevel}`;
+        levelResultElement.textContent = `Test Completed! You are at Level ${nextLevel}`;
     } else if (nextLevel > currentLevel) {
         resultMessage = `Advanced to Level ${nextLevel}`;
         levelResultElement.textContent = `Great job! You will advance to Level ${nextLevel}.`;
@@ -590,14 +587,15 @@ function showResults() {
             level: currentLevel,
             score: score,
             result: resultMessage,
+            completionTitle: completionTitle,
             incorrectAnswers: window.currentTestIncorrectAnswers || []
         });
         
         // Reset the tracking for the next test
         window.currentTestIncorrectAnswers = [];
         
-        // Update user's level
-        if (nextLevel !== "complete" && nextLevel !== "mastery") {
+        // Update user's level only if not completed
+        if (!currentUser.completed) {
             currentUser.level = nextLevel;
         }
         
@@ -624,29 +622,23 @@ function determineNextLevel() {
 // Continue to next level
 function continueToNextLevel() {
     if (currentUser) {
-        // Update display with user's info
-        userNameSpan.textContent = currentUser.nickName || currentUser.firstName;
-        userCurrentLevelSpan.textContent = currentUser.level;
-        
-        hideAllScreens();
-        showScreen(startScreen);
+        if (currentUser.completed) {
+            // If the user has completed the program, go back to welcome screen
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        } else {
+            // Update display with user's info
+            userNameSpan.textContent = currentUser.nickName || currentUser.firstName;
+            userCurrentLevelSpan.textContent = currentUser.level;
+            
+            hideAllScreens();
+            showScreen(startScreen);
+        }
     } else {
         // If somehow there's no current user, go back to welcome
         hideAllScreens();
         showScreen(welcomeScreen);
     }
-}
-
-// Admin functions
-function showAdminScreen() {
-    console.log("Showing admin screen");
-    hideAllScreens();
-    showScreen(adminScreen);
-    
-    // Reset admin form
-    if (adminPassword) adminPassword.value = '';
-    if (adminControls) adminControls.classList.add('hidden');
-    if (adminLogin) adminLogin.classList.remove('hidden');
 }
 
 // Admin login handler
@@ -837,127 +829,6 @@ function loadQuestionBank() {
     // Create table body
     const tbody = document.createElement('tbody');
     
-    // Add each question to the table
-    allQuestions[level].forEach((question, index) => {
-        const tr = document.createElement('tr');
-        
-        // Checkbox column
-        const tdCheck = document.createElement('td');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.classList.add('question-checkbox');
-        checkbox.dataset.index = index;
-        tdCheck.appendChild(checkbox);
-        
-        // Question column
-        const tdQuestion = document.createElement('td');
-        tdQuestion.textContent = question.question;
-        
-        // Options column
-        const tdOptions = document.createElement('td');
-        tdOptions.innerHTML = question.options.map((opt, i) => {
-            return `<div>${i + 1}. ${opt}</div>`;
-        }).join('');
-        
-        // Correct answer column
-        const tdCorrect = document.createElement('td');
-        tdCorrect.textContent = `Option ${question.correctOptionIndex + 1}`;
-        
-        // Add cells to the row
-        tr.appendChild(tdCheck);
-        tr.appendChild(tdQuestion);
-        tr.appendChild(tdOptions);
-        tr.appendChild(tdCorrect);
-        
-        // Add row to table body
-        tbody.appendChild(tr);
-    });
-    
-    table.appendChild(tbody);
-    questionBankContainer.appendChild(table);
-    
-    // Add event listener to "select all" checkbox
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', () => {
-            const checkboxes = document.querySelectorAll('.question-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
-            });
-        });
-    }
-}
-
-// Delete selected questions
-function deleteSelectedQuestions() {
-    const level = parseInt(bankLevelSelect.value);
-    const selectedCheckboxes = document.querySelectorAll('.question-checkbox:checked');
-    
-    if (selectedCheckboxes.length === 0) {
-        alert('No questions selected for deletion');
-        return;
-    }
-    
-    // Confirm deletion
-    if (!confirm(`Are you sure you want to delete ${selectedCheckboxes.length} question(s)?`)) {
-        return;
-    }
-    
-    // Get indices to delete (in descending order to avoid index shifting issues)
-    const indicesToDelete = Array.from(selectedCheckboxes)
-        .map(checkbox => parseInt(checkbox.dataset.index))
-        .sort((a, b) => b - a); // Sort in descending order
-    
-    // Remove questions
-    indicesToDelete.forEach(index => {
-        allQuestions[level].splice(index, 1);
-    });
-    
-    // Save to Firebase
-    saveQuestionsToStorage().then(() => {
-        // Reload question bank
-        loadQuestionBank();
-        
-        alert(`${selectedCheckboxes.length} question(s) deleted successfully!`);
-    });
-}
-
-// Load user data in admin panel
-function loadUserData() {
-    usersContainer.innerHTML = '';
-    
-    const userIds = Object.keys(users);
-    
-    if (userIds.length === 0) {
-        usersContainer.innerHTML = `
-            <div class="no-users-message">
-                No user data available
-            </div>
-        `;
-        return;
-    }
-    
-    // Create table for users
-    const table = document.createElement('table');
-    table.classList.add('users-table');
-    
-    // Create table header
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-        <tr>
-            <th>National ID</th>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Nickname</th>
-            <th>Current Level</th>
-            <th>Test History</th>
-        </tr>
-    `;
-    table.appendChild(thead);
-    
-    // Create table body
-    const tbody = document.createElement('tbody');
-    
     // Add each user to the table
     userIds.forEach(userId => {
         const user = users[userId];
@@ -973,6 +844,16 @@ function loadUserData() {
                         formattedId.substring(12);
         }
         
+        // Check if the user has a completion title (from level 10)
+        let completionTitle = '';
+        if (user.history && user.history.length > 0) {
+            // Get the last test
+            const lastTest = user.history[user.history.length - 1];
+            if (lastTest.completionTitle) {
+                completionTitle = lastTest.completionTitle;
+            }
+        }
+        
         tr.innerHTML = `
             <td>${formattedId}</td>
             <td>${user.firstName}</td>
@@ -980,6 +861,7 @@ function loadUserData() {
             <td>${user.nickName || '-'}</td>
             <td>${user.level}</td>
             <td>${user.history.length ? user.history.length + ' tests' : 'No tests taken'}</td>
+            <td>${user.completed ? (completionTitle ? 'Completed: ' + completionTitle : 'Completed') : 'In progress'}</td>
         `;
         
         tbody.appendChild(tr);
@@ -1000,7 +882,7 @@ function exportUserData() {
     
     // Create data for export
     const exportData = [
-        ['National ID', 'First Name', 'Last Name', 'Nickname', 'Current Level', 'Test History']
+        ['National ID', 'First Name', 'Last Name', 'Nickname', 'Current Level', 'Test History', 'Status', 'Completion Title']
     ];
     
     userIds.forEach(userId => {
@@ -1016,6 +898,16 @@ function exportUserData() {
                         formattedId.substring(12);
         }
         
+        // Get completion title if available
+        let completionTitle = '';
+        if (user.history && user.history.length > 0) {
+            // Get the last test
+            const lastTest = user.history[user.history.length - 1];
+            if (lastTest.completionTitle) {
+                completionTitle = lastTest.completionTitle;
+            }
+        }
+        
         // Basic user row
         const userRow = [
             formattedId,
@@ -1023,7 +915,9 @@ function exportUserData() {
             user.lastName,
             user.nickName || '',
             user.level,
-            user.history.length || 0
+            user.history.length || 0,
+            user.completed ? 'Completed' : 'In progress',
+            completionTitle
         ];
         
         exportData.push(userRow);
@@ -1031,7 +925,7 @@ function exportUserData() {
     
     // Create detailed history sheet
     const historyData = [
-        ['National ID', 'Name', 'Date', 'Level', 'Score', 'Result']
+        ['National ID', 'Name', 'Date', 'Level', 'Score', 'Result', 'Completion Title']
     ];
     
     userIds.forEach(userId => {
@@ -1045,7 +939,8 @@ function exportUserData() {
                     entry.date,
                     entry.level,
                     entry.score,
-                    entry.result
+                    entry.result,
+                    entry.completionTitle || ''
                 ]);
             });
         }
@@ -1103,37 +998,151 @@ function exportUserData() {
     XLSX.writeFile(wb, 'quiz_user_data.xlsx');
 }
 
-// Helper functions
-function hideAllScreens() {
-    if (welcomeScreen) welcomeScreen.classList.add('hidden');
-    if (registrationScreen) registrationScreen.classList.add('hidden');
-    if (startScreen) startScreen.classList.add('hidden');
-    if (quizScreen) quizScreen.classList.add('hidden');
-    if (resultScreen) resultScreen.classList.add('hidden');
-    if (adminScreen) adminScreen.classList.add('hidden');
-}
-
-function showScreen(screen) {
-    if (screen) {
-        screen.classList.remove('hidden');
-    } else {
-        console.error("Attempted to show a screen that doesn't exist");
+// Initialize the application
+function init() {
+    console.log("Initializing application...");
+    debugElements();
+    
+    // Add event listeners - Welcome Screen
+    if (startMainBtn) {
+        startMainBtn.addEventListener('click', function() {
+            console.log("Start button clicked");
+            showRegistrationScreen();
+        });
     }
-}
-
-// Check connection status with Firebase
-function checkFirebaseConnection() {
+    
+    if (adminBtn) {
+        adminBtn.addEventListener('click', function() {
+            console.log("Admin button clicked");
+            showAdminScreen();
+        });
+    }
+    
+    // Add event listeners - Registration Screen
+    if (readyBtn) {
+        readyBtn.addEventListener('click', handleRegistration);
+    }
+    
+    if (backToWelcomeBtn) {
+        backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (nationalIdInput) {
+        nationalIdInput.addEventListener('input', validateNationalId);
+    }
+    
+    // Add event listeners - Start Screen
+    if (startQuizBtn) {
+        startQuizBtn.addEventListener('click', startQuiz);
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Add event listeners - Quiz Screen
+    if (submitBtn) {
+        submitBtn.addEventListener('click', submitAnswer);
+    }
+    
+    // Add event listeners - Result Screen
+    if (continueBtn) {
+        continueBtn.addEventListener('click', continueToNextLevel);
+    }
+    
+    // Add event listeners - Admin Screen
+    if (loginBtn) {
+        loginBtn.addEventListener('click', adminLoginHandler);
+    }
+    
+    if (adminBackBtnLogin) {
+        adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (adminBackBtn) {
+        adminBackBtn.addEventListener('click', showWelcomeScreen);
+    }
+    
+    // Add event listeners - Admin Tabs
+    if (singleQuestionTab) {
+        singleQuestionTab.addEventListener('click', () => {
+            setActiveTab('single-question-tab');
+            showAdminSection('single-question-section');
+        });
+    }
+    
+    if (batchQuestionTab) {
+        batchQuestionTab.addEventListener('click', () => {
+            setActiveTab('batch-question-tab');
+            showAdminSection('batch-question-section');
+        });
+    }
+    
+    if (questionBankTab) {
+        questionBankTab.addEventListener('click', () => {
+            setActiveTab('question-bank-tab');
+            showAdminSection('question-bank-section');
+        });
+    }
+    
+    if (userDataTab) {
+        userDataTab.addEventListener('click', () => {
+            setActiveTab('user-data-tab');
+            showAdminSection('user-data-section');
+            loadUserData();
+        });
+    }
+    
+    // Add event listeners - Question Management
+    if (addQuestionBtn) {
+        addQuestionBtn.addEventListener('click', addNewQuestion);
+    }
+    
+    if (loadBatchFormBtn) {
+        loadBatchFormBtn.addEventListener('click', () => {
+            showBatchQuestionInput();
+            if (saveBatchBtn) saveBatchBtn.classList.remove('hidden');
+        });
+    }
+    
+    if (saveBatchBtn) {
+        saveBatchBtn.addEventListener('click', saveBatchQuestions);
+    }
+    
+    if (loadBankBtn) {
+        loadBankBtn.addEventListener('click', loadQuestionBank);
+    }
+    
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
+    }
+    
+    // Add event listeners - User Data
+    if (exportUsersBtn) {
+        exportUsersBtn.addEventListener('click', exportUserData);
+    }
+    
     try {
-        const connectedRef = firebase.database().ref(".info/connected");
-        connectedRef.on("value", (snap) => {
-            if (snap.val() === true) {
-                console.log("Connected to Firebase");
-            } else {
-                console.log("Disconnected from Firebase");
-            }
+        // Load questions and users from Firebase
+        Promise.all([
+            loadQuestionsFromStorage(),
+            loadUsersFromStorage()
+        ]).then(() => {
+            console.log("Data loaded successfully");
+            // Show welcome screen by default
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        }).catch(error => {
+            console.error("Error initializing app:", error);
+            // Still show welcome screen even if there's an error
+            hideAllScreens();
+            showScreen(welcomeScreen);
         });
     } catch (error) {
-        console.error("Error checking Firebase connection:", error);
+        console.error("Error during app initialization:", error);
+        // Show welcome screen as fallback
+        hideAllScreens();
+        showScreen(welcomeScreen);
     }
 }
 
@@ -1149,3 +1158,90 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Error during initialization:", e);
     }
 });
+    allQuestions[level].forEach((question, index) => {
+        const tr = document.createElement('tr');
+        
+        // Checkbox column
+        const tdCheck = document.createElement('td');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('question-checkbox');
+        checkbox.dataset.index = index;
+        tdCheck.appendChild(checkbox);
+        
+        // Question column
+        const tdQuestion = document.createElement('td');
+        tdQuestion.textContent = question.question;
+        
+        // Options column
+        const tdOptions = document.createElement('td');
+        tdOptions.innerHTML = question.options.map((opt, i) => {
+            return `<div>${i + 1}. ${opt}</div>`;
+        }).join('');
+        
+        // Correct answer column
+        const tdCorrect = document.createElement('td');
+        tdCorrect.textContent = `Option ${question.correctOptionIndex + 1}`;
+        
+        // Add cells to the row
+        tr.appendChild(tdCheck);
+        tr.appendChild(tdQuestion);
+        tr.appendChild(tdOptions);
+        tr.appendChild(tdCorrect);
+        
+        // Add row to table body
+        tbody.appendChild(tr);
+    });
+    
+    table.appendChild(tbody);
+    questionBankContainer.appendChild(table);
+    
+    // Add event listener to "select all" checkbox
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+            const checkboxes = document.querySelectorAll('.question-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        });
+    }
+
+// Load user data in admin panel
+function loadUserData() {
+    usersContainer.innerHTML = '';
+    
+    const userIds = Object.keys(users);
+    
+    if (userIds.length === 0) {
+        usersContainer.innerHTML = `
+            <div class="no-users-message">
+                No user data available
+            </div>
+        `;
+        return;
+    }
+    
+    // Create table for users
+    const table = document.createElement('table');
+    table.classList.add('users-table');
+    
+    // Create table header
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>National ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Nickname</th>
+            <th>Current Level</th>
+            <th>Test History</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                `;
+                usersContainer.appendChild(table);
+            }
