@@ -1245,3 +1245,108 @@ function loadUserData() {
                 `;
                 usersContainer.appendChild(table);
             }
+// Save users to Firebase
+function saveUsersToStorage() {
+    console.log("Attempting to save users to Firebase:", users);
+    
+    // Add a timestamp for when this save was made
+    const saveData = {
+        ...users,
+        lastUpdated: new Date().toISOString()
+    };
+    
+    return database.ref('users').set(saveData)
+        .then(() => {
+            console.log("User data saved successfully to Firebase");
+            return true; // Return success
+        })
+        .catch((error) => {
+            console.error("Error saving users to Firebase:", error);
+            alert("There was an error saving user data. Please try again.");
+            return false; // Return failure
+        });
+}
+
+// Save questions to Firebase
+function saveQuestionsToStorage() {
+    console.log("Attempting to save questions to Firebase");
+    
+    return database.ref('questions').set(allQuestions)
+        .then(() => {
+            console.log("Questions saved successfully to Firebase");
+            return true; // Return success
+        })
+        .catch((error) => {
+            console.error("Error saving questions to Firebase:", error);
+            alert("There was an error saving questions. Please try again.");
+            return false; // Return failure
+        });
+}
+
+// Handle registration with improved Firebase interaction
+function handleRegistration() {
+    const nationalId = nationalIdInput.value.trim();
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const nickName = nickNameInput.value.trim();
+    
+    // Validate inputs
+    if (nationalId.length !== 13) {
+        idError.textContent = 'National ID must be exactly 13 digits';
+        return;
+    }
+    
+    if (!firstName || !lastName) {
+        alert('Please enter your first name and last name');
+        return;
+    }
+    
+    // Create or update user
+    const userId = nationalId;
+    
+    if (!users[userId]) {
+        // New user
+        users[userId] = {
+            nationalId: nationalId,
+            firstName: firstName,
+            lastName: lastName,
+            nickName: nickName,
+            level: 1,  // Always start at level 1
+            history: [],
+            completed: false, // New flag to track completion status
+            createdAt: new Date().toISOString() // Add creation timestamp
+        };
+        console.log("Created new user:", users[userId]);
+    } else {
+        // Existing user - update info but keep level
+        users[userId].firstName = firstName;
+        users[userId].lastName = lastName;
+        users[userId].nickName = nickName;
+        users[userId].updatedAt = new Date().toISOString(); // Add update timestamp
+        
+        console.log("Updated existing user:", users[userId]);
+        
+        // Check if user has already completed the program
+        if (users[userId].completed) {
+            alert("You have already completed all tests. Thank you for participating!");
+            showWelcomeScreen();
+            return;
+        }
+    }
+    
+    // Set current user
+    currentUser = users[userId];
+    
+    // Save users to Firebase with proper feedback
+    saveUsersToStorage().then((success) => {
+        if (success) {
+            console.log("User data saved, starting quiz");
+            // Start the quiz directly
+            startQuiz();
+        } else {
+            // Handle the case where saving failed
+            console.error("Failed to save user data");
+            alert("User registration failed. Please try again.");
+        }
+    });
+}
