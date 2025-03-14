@@ -185,7 +185,102 @@ function checkFirebaseConnection() {
     }
 }
 
-// Delete selected questions - FIXED THE MISSING BRACKET HERE
+// Save users to Firebase - IMPROVED VERSION
+function saveUsersToStorage() {
+    console.log("Saving users to Firebase:", Object.keys(users).length, "users");
+    
+    return database.ref('users').set(users)
+        .then(() => {
+            console.log("User data saved successfully to Firebase");
+            return true;
+        })
+        .catch((error) => {
+            console.error("Error saving users to Firebase:", error);
+            alert("There was an error saving user data. Please try again.");
+            return false;
+        });
+}
+
+// Save questions to Firebase - IMPROVED VERSION
+function saveQuestionsToStorage() {
+    // Count total questions
+    let totalQuestions = 0;
+    for (const level in allQuestions) {
+        if (allQuestions[level]) {
+            totalQuestions += allQuestions[level].length;
+        }
+    }
+    
+    console.log(`Saving ${totalQuestions} questions across all levels to Firebase`);
+    
+    return database.ref('questions').set(allQuestions)
+        .then(() => {
+            console.log("Questions saved successfully to Firebase");
+            return true;
+        })
+        .catch((error) => {
+            console.error("Error saving questions to Firebase:", error);
+            alert("There was an error saving questions. Please try again.");
+            return false;
+        });
+}
+
+// Load users from Firebase - IMPROVED VERSION
+function loadUsersFromStorage() {
+    console.log("Loading users from Firebase");
+    
+    return database.ref('users').once('value')
+        .then((snapshot) => {
+            const savedUsers = snapshot.val();
+            if (savedUsers) {
+                // Clear existing users and add the loaded ones
+                Object.assign(users, savedUsers);
+                console.log("Users loaded from Firebase:", Object.keys(users).length, "users");
+            } else {
+                console.log("No users found in Firebase");
+            }
+        })
+        .catch((error) => {
+            console.error("Error loading users:", error);
+            alert("Failed to load user data from the server. Please check your connection.");
+        });
+}
+
+// Load questions from Firebase - IMPROVED VERSION
+function loadQuestionsFromStorage() {
+    console.log("Loading questions from Firebase");
+    
+    return database.ref('questions').once('value')
+        .then((snapshot) => {
+            const savedQuestions = snapshot.val();
+            if (savedQuestions) {
+                // Clear all existing questions first
+                allQuestions = {}; 
+                // Then add Firebase questions
+                Object.assign(allQuestions, savedQuestions);
+                
+                // Count total questions
+                let totalQuestions = 0;
+                for (const level in allQuestions) {
+                    if (allQuestions[level]) {
+                        totalQuestions += allQuestions[level].length;
+                    }
+                }
+                
+                console.log(`Loaded ${totalQuestions} questions across all levels from Firebase`);
+            } else {
+                // If no questions in Firebase, ensure we have an empty question bank
+                allQuestions = {};
+                console.log("No questions found in Firebase");
+            }
+        })
+        .catch((error) => {
+            console.error("Error loading questions:", error);
+            alert("Failed to load questions from the server. Please check your connection.");
+        });
+}
+
+// Delete selected questions
 function deleteSelectedQuestions() {
     const level = parseInt(bankLevelSelect.value);
     const selectedCheckboxes = document.querySelectorAll('.question-checkbox:checked');
@@ -193,7 +288,7 @@ function deleteSelectedQuestions() {
     if (selectedCheckboxes.length === 0) {
         alert('No questions selected for deletion');
         return;
-    } // FIXED: Added the missing closing bracket here
+    }
     
     // Confirm deletion
     if (!confirm(`Are you sure you want to delete ${selectedCheckboxes.length} question(s)?`)) {
@@ -266,7 +361,7 @@ function showAdminSection(sectionId) {
     if (selectedSection) selectedSection.classList.remove('hidden');
 }
 
-// Handle registration
+// Handle registration - IMPROVED VERSION
 function handleRegistration() {
     const nationalId = nationalIdInput.value.trim();
     const firstName = firstNameInput.value.trim();
@@ -296,13 +391,18 @@ function handleRegistration() {
             nickName: nickName,
             level: 1,  // Always start at level 1
             history: [],
-            completed: false // New flag to track completion status
+            completed: false, // New flag to track completion status
+            createdAt: new Date().toISOString() // Add creation timestamp
         };
+        console.log("Created new user:", users[userId]);
     } else {
         // Existing user - update info but keep level
         users[userId].firstName = firstName;
         users[userId].lastName = lastName;
         users[userId].nickName = nickName;
+        users[userId].updatedAt = new Date().toISOString(); // Add update timestamp
+        
+        console.log("Updated existing user:", users[userId]);
         
         // Check if user has already completed the program
         if (users[userId].completed) {
@@ -315,11 +415,18 @@ function handleRegistration() {
     // Set current user
     currentUser = users[userId];
     
-    // Save users to Firebase
-    saveUsersToStorage();
-    
-    // Start the quiz directly
-    startQuiz();
+    // Save users to Firebase with proper feedback
+    saveUsersToStorage().then((success) => {
+        if (success) {
+            console.log("User data saved, starting quiz");
+            // Start the quiz directly
+            startQuiz();
+        } else {
+            // Handle the case where saving failed
+            console.error("Failed to save user data");
+            alert("User registration failed. Please try again.");
+        }
+    });
 }
 
 // Handle user logout
@@ -327,61 +434,6 @@ function handleLogout() {
     currentUser = null;
     hideAllScreens();
     showScreen(welcomeScreen);
-}
-
-// Load users from Firebase
-function loadUsersFromStorage() {
-    return database.ref('users').once('value')
-        .then((snapshot) => {
-            const savedUsers = snapshot.val();
-            if (savedUsers) {
-                Object.assign(users, savedUsers);
-            }
-        })
-        .catch((error) => {
-            console.error("Error loading users:", error);
-        });
-}
-
-// Save users to Firebase
-function saveUsersToStorage() {
-    return database.ref('users').set(users)
-        .catch((error) => {
-            console.error("Error saving users:", error);
-            alert("There was an error saving user data. Please try again.");
-        });
-}
-
-// Load questions from Firebase
-function loadQuestionsFromStorage() {
-    return database.ref('questions').once('value')
-        .then((snapshot) => {
-            const savedQuestions = snapshot.val();
-            if (savedQuestions) {
-                // REPLACE instead of merge
-                // Clear all existing questions first
-                allQuestions = {}; 
-                // Then add Firebase questions
-                Object.assign(allQuestions, savedQuestions);
-                console.log("Questions loaded from Firebase");
-            } else {
-                // If no questions in Firebase, ensure we have an empty question bank
-                allQuestions = {};
-                console.log("No questions found in Firebase");
-            }
-        })
-        .catch((error) => {
-            console.error("Error loading questions:", error);
-        });
-}
-
-// Save questions to Firebase
-function saveQuestionsToStorage() {
-    return database.ref('questions').set(allQuestions)
-        .catch((error) => {
-            console.error("Error saving questions:", error);
-            alert("There was an error saving questions. Please try again.");
-        });
 }
 
 // Start the quiz
@@ -793,10 +845,14 @@ function saveBatchQuestions() {
     });
 }
 
-// Load question bank for selected level
+// Load question bank for selected level - FIXED FUNCTION
 function loadQuestionBank() {
+    console.log("Loading question bank to admin panel");
     const level = parseInt(bankLevelSelect.value);
     questionBankContainer.innerHTML = '';
+    
+    console.log("Loading questions for level:", level);
+    console.log("Questions in this level:", allQuestions[level] ? allQuestions[level].length : 0);
     
     // If no questions for this level
     if (!allQuestions[level] || allQuestions[level].length === 0) {
@@ -829,335 +885,7 @@ function loadQuestionBank() {
     // Create table body
     const tbody = document.createElement('tbody');
     
-    // Add each user to the table
-    userIds.forEach(userId => {
-        const user = users[userId];
-        const tr = document.createElement('tr');
-        
-        // Format National ID for display
-        let formattedId = user.nationalId;
-        if (formattedId.length === 13) {
-            formattedId = formattedId.substring(0, 1) + '-' +
-                        formattedId.substring(1, 5) + '-' +
-                        formattedId.substring(5, 10) + '-' +
-                        formattedId.substring(10, 12) + '-' +
-                        formattedId.substring(12);
-        }
-        
-        // Check if the user has a completion title (from level 10)
-        let completionTitle = '';
-        if (user.history && user.history.length > 0) {
-            // Get the last test
-            const lastTest = user.history[user.history.length - 1];
-            if (lastTest.completionTitle) {
-                completionTitle = lastTest.completionTitle;
-            }
-        }
-        
-        tr.innerHTML = `
-            <td>${formattedId}</td>
-            <td>${user.firstName}</td>
-            <td>${user.lastName}</td>
-            <td>${user.nickName || '-'}</td>
-            <td>${user.level}</td>
-            <td>${user.history.length ? user.history.length + ' tests' : 'No tests taken'}</td>
-            <td>${user.completed ? (completionTitle ? 'Completed: ' + completionTitle : 'Completed') : 'In progress'}</td>
-        `;
-        
-        tbody.appendChild(tr);
-    });
-    
-    table.appendChild(tbody);
-    usersContainer.appendChild(table);
-}
-
-// Export user data to Excel
-function exportUserData() {
-    const userIds = Object.keys(users);
-    
-    if (userIds.length === 0) {
-        alert('No user data available to export');
-        return;
-    }
-    
-    // Create data for export
-    const exportData = [
-        ['National ID', 'First Name', 'Last Name', 'Nickname', 'Current Level', 'Test History', 'Status', 'Completion Title']
-    ];
-    
-    userIds.forEach(userId => {
-        const user = users[userId];
-        
-        // Format National ID for export
-        let formattedId = user.nationalId;
-        if (formattedId.length === 13) {
-            formattedId = formattedId.substring(0, 1) + '-' +
-                        formattedId.substring(1, 5) + '-' +
-                        formattedId.substring(5, 10) + '-' +
-                        formattedId.substring(10, 12) + '-' +
-                        formattedId.substring(12);
-        }
-        
-        // Get completion title if available
-        let completionTitle = '';
-        if (user.history && user.history.length > 0) {
-            // Get the last test
-            const lastTest = user.history[user.history.length - 1];
-            if (lastTest.completionTitle) {
-                completionTitle = lastTest.completionTitle;
-            }
-        }
-        
-        // Basic user row
-        const userRow = [
-            formattedId,
-            user.firstName,
-            user.lastName,
-            user.nickName || '',
-            user.level,
-            user.history.length || 0,
-            user.completed ? 'Completed' : 'In progress',
-            completionTitle
-        ];
-        
-        exportData.push(userRow);
-    });
-    
-    // Create detailed history sheet
-    const historyData = [
-        ['National ID', 'Name', 'Date', 'Level', 'Score', 'Result', 'Completion Title']
-    ];
-    
-    userIds.forEach(userId => {
-        const user = users[userId];
-        
-        if (user.history) {
-            user.history.forEach(entry => {
-                historyData.push([
-                    user.nationalId,
-                    `${user.firstName} ${user.lastName}`,
-                    entry.date,
-                    entry.level,
-                    entry.score,
-                    entry.result,
-                    entry.completionTitle || ''
-                ]);
-            });
-        }
-    });
-    
-    // Create incorrect answers sheet
-    const incorrectAnswersData = [
-        ['National ID', 'Name', 'Date', 'Level', 'Question', 'User Answer', 'Correct Answer']
-    ];
-    
-    userIds.forEach(userId => {
-        const user = users[userId];
-        
-        // Only add if the user has incorrectAnswers data
-        if (user.history) {
-            user.history.forEach(historyEntry => {
-                // Check if this history entry has incorrectAnswers
-                if (historyEntry.incorrectAnswers && historyEntry.incorrectAnswers.length > 0) {
-                    historyEntry.incorrectAnswers.forEach(answer => {
-                        incorrectAnswersData.push([
-                            user.nationalId,
-                            `${user.firstName} ${user.lastName}`,
-                            historyEntry.date,
-                            historyEntry.level,
-                            answer.question,
-                            answer.userAnswer,
-                            answer.correctAnswer
-                        ]);
-                    });
-                }
-            });
-        }
-    });
-    
-    // Create workbook with three sheets
-    const wb = XLSX.utils.book_new();
-    
-    // Add users sheet
-    const usersWs = XLSX.utils.aoa_to_sheet(exportData);
-    XLSX.utils.book_append_sheet(wb, usersWs, 'Users');
-    
-    // Add history sheet if there's history data
-    if (historyData.length > 1) {
-        const historyWs = XLSX.utils.aoa_to_sheet(historyData);
-        XLSX.utils.book_append_sheet(wb, historyWs, 'Test History');
-    }
-    
-    // Add incorrect answers sheet if there's data
-    if (incorrectAnswersData.length > 1) {
-        const incorrectWs = XLSX.utils.aoa_to_sheet(incorrectAnswersData);
-        XLSX.utils.book_append_sheet(wb, incorrectWs, 'Incorrect Answers');
-    }
-    
-    // Generate Excel file and trigger download
-    XLSX.writeFile(wb, 'quiz_user_data.xlsx');
-}
-
-// Initialize the application
-function init() {
-    console.log("Initializing application...");
-    debugElements();
-    
-    // Add event listeners - Welcome Screen
-    if (startMainBtn) {
-        startMainBtn.addEventListener('click', function() {
-            console.log("Start button clicked");
-            showRegistrationScreen();
-        });
-    }
-    
-    if (adminBtn) {
-        adminBtn.addEventListener('click', function() {
-            console.log("Admin button clicked");
-            showAdminScreen();
-        });
-    }
-    
-    // Add event listeners - Registration Screen
-    if (readyBtn) {
-        readyBtn.addEventListener('click', handleRegistration);
-    }
-    
-    if (backToWelcomeBtn) {
-        backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
-    }
-    
-    if (nationalIdInput) {
-        nationalIdInput.addEventListener('input', validateNationalId);
-    }
-    
-    // Add event listeners - Start Screen
-    if (startQuizBtn) {
-        startQuizBtn.addEventListener('click', startQuiz);
-    }
-    
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-    
-    // Add event listeners - Quiz Screen
-    if (submitBtn) {
-        submitBtn.addEventListener('click', submitAnswer);
-    }
-    
-    // Add event listeners - Result Screen
-    if (continueBtn) {
-        continueBtn.addEventListener('click', continueToNextLevel);
-    }
-    
-    // Add event listeners - Admin Screen
-    if (loginBtn) {
-        loginBtn.addEventListener('click', adminLoginHandler);
-    }
-    
-    if (adminBackBtnLogin) {
-        adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
-    }
-    
-    if (adminBackBtn) {
-        adminBackBtn.addEventListener('click', showWelcomeScreen);
-    }
-    
-    // Add event listeners - Admin Tabs
-    if (singleQuestionTab) {
-        singleQuestionTab.addEventListener('click', () => {
-            setActiveTab('single-question-tab');
-            showAdminSection('single-question-section');
-        });
-    }
-    
-    if (batchQuestionTab) {
-        batchQuestionTab.addEventListener('click', () => {
-            setActiveTab('batch-question-tab');
-            showAdminSection('batch-question-section');
-        });
-    }
-    
-    if (questionBankTab) {
-        questionBankTab.addEventListener('click', () => {
-            setActiveTab('question-bank-tab');
-            showAdminSection('question-bank-section');
-        });
-    }
-    
-    if (userDataTab) {
-        userDataTab.addEventListener('click', () => {
-            setActiveTab('user-data-tab');
-            showAdminSection('user-data-section');
-            loadUserData();
-        });
-    }
-    
-    // Add event listeners - Question Management
-    if (addQuestionBtn) {
-        addQuestionBtn.addEventListener('click', addNewQuestion);
-    }
-    
-    if (loadBatchFormBtn) {
-        loadBatchFormBtn.addEventListener('click', () => {
-            showBatchQuestionInput();
-            if (saveBatchBtn) saveBatchBtn.classList.remove('hidden');
-        });
-    }
-    
-    if (saveBatchBtn) {
-        saveBatchBtn.addEventListener('click', saveBatchQuestions);
-    }
-    
-    if (loadBankBtn) {
-        loadBankBtn.addEventListener('click', loadQuestionBank);
-    }
-    
-    if (deleteSelectedBtn) {
-        deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
-    }
-    
-    // Add event listeners - User Data
-    if (exportUsersBtn) {
-        exportUsersBtn.addEventListener('click', exportUserData);
-    }
-    
-    try {
-        // Load questions and users from Firebase
-        Promise.all([
-            loadQuestionsFromStorage(),
-            loadUsersFromStorage()
-        ]).then(() => {
-            console.log("Data loaded successfully");
-            // Show welcome screen by default
-            hideAllScreens();
-            showScreen(welcomeScreen);
-        }).catch(error => {
-            console.error("Error initializing app:", error);
-            // Still show welcome screen even if there's an error
-            hideAllScreens();
-            showScreen(welcomeScreen);
-        });
-    } catch (error) {
-        console.error("Error during app initialization:", error);
-        // Show welcome screen as fallback
-        hideAllScreens();
-        showScreen(welcomeScreen);
-    }
-}
-
-// Initialize the app when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM fully loaded");
-    debugElements();
-    
-    try {
-        checkFirebaseConnection();
-        init();
-    } catch (e) {
-        console.error("Error during initialization:", e);
-    }
-});
+    // Add each question to the table
     allQuestions[level].forEach((question, index) => {
         const tr = document.createElement('tr');
         
@@ -1206,12 +934,173 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
+    console.log("Question bank table created with", allQuestions[level].length, "questions");
+}
 
-// Load user data in admin panel
+// Export user data to Excel - FIXED COMPLETE VERSION
+function exportUserData() {
+    console.log("Starting user data export");
+    const userIds = Object.keys(users);
+    
+    if (userIds.length === 0) {
+        alert('No user data available to export');
+        return;
+    }
+    
+    console.log("Exporting data for", userIds.length, "users");
+    
+    try {
+        // Check if XLSX is available
+        if (typeof XLSX === 'undefined') {
+            console.error("XLSX library not loaded");
+            alert("Export library not loaded. Please check your internet connection and try again.");
+            return;
+        }
+        
+        // Create data for export
+        const exportData = [
+            ['National ID', 'First Name', 'Last Name', 'Nickname', 'Current Level', 'Test History', 'Status', 'Completion Title']
+        ];
+        
+        userIds.forEach(userId => {
+            const user = users[userId];
+            
+            // Format National ID for export
+            let formattedId = user.nationalId;
+            if (formattedId && formattedId.length === 13) {
+                formattedId = formattedId.substring(0, 1) + '-' +
+                            formattedId.substring(1, 5) + '-' +
+                            formattedId.substring(5, 10) + '-' +
+                            formattedId.substring(10, 12) + '-' +
+                            formattedId.substring(12);
+            }
+            
+            // Get completion title if available
+            let completionTitle = '';
+            if (user.history && user.history.length > 0) {
+                // Get the last test
+                const lastTest = user.history[user.history.length - 1];
+                if (lastTest && lastTest.completionTitle) {
+                    completionTitle = lastTest.completionTitle;
+                }
+            }
+            
+            // Basic user row
+            const userRow = [
+                formattedId || '',
+                user.firstName || '',
+                user.lastName || '',
+                user.nickName || '',
+                user.level || 1,
+                user.history ? user.history.length : 0,
+                user.completed ? 'Completed' : 'In progress',
+                completionTitle
+            ];
+            
+            exportData.push(userRow);
+        });
+        
+        // Create detailed history sheet
+        const historyData = [
+            ['National ID', 'Name', 'Date', 'Level', 'Score', 'Result', 'Completion Title']
+        ];
+        
+        let historyCount = 0;
+        userIds.forEach(userId => {
+            const user = users[userId];
+            
+            if (user.history && user.history.length > 0) {
+                user.history.forEach(entry => {
+                    if (entry) {
+                        historyData.push([
+                            user.nationalId || '',
+                            `${user.firstName || ''} ${user.lastName || ''}`,
+                            entry.date || '',
+                            entry.level || '',
+                            entry.score || 0,
+                            entry.result || '',
+                            entry.completionTitle || ''
+                        ]);
+                        historyCount++;
+                    }
+                });
+            }
+        });
+        
+        // Create incorrect answers sheet
+        const incorrectAnswersData = [
+            ['National ID', 'Name', 'Date', 'Level', 'Question', 'User Answer', 'Correct Answer']
+        ];
+        
+        let incorrectCount = 0;
+        userIds.forEach(userId => {
+            const user = users[userId];
+            
+            // Only add if the user has incorrectAnswers data
+            if (user.history) {
+                user.history.forEach(historyEntry => {
+                    // Check if this history entry has incorrectAnswers
+                    if (historyEntry && historyEntry.incorrectAnswers && historyEntry.incorrectAnswers.length > 0) {
+                        historyEntry.incorrectAnswers.forEach(answer => {
+                            if (answer) {
+                                incorrectAnswersData.push([
+                                    user.nationalId || '',
+                                    `${user.firstName || ''} ${user.lastName || ''}`,
+                                    historyEntry.date || '',
+                                    historyEntry.level || '',
+                                    answer.question || '',
+                                    answer.userAnswer || '',
+                                    answer.correctAnswer || ''
+                                ]);
+                                incorrectCount++;
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        
+        console.log("Export data prepared:", 
+                   "Users:", exportData.length - 1,
+                   "History entries:", historyCount,
+                   "Incorrect answers:", incorrectCount);
+        
+        // Create workbook with three sheets
+        const wb = XLSX.utils.book_new();
+        
+        // Add users sheet
+        const usersWs = XLSX.utils.aoa_to_sheet(exportData);
+        XLSX.utils.book_append_sheet(wb, usersWs, 'Users');
+        
+        // Add history sheet if there's history data
+        if (historyData.length > 1) {
+            const historyWs = XLSX.utils.aoa_to_sheet(historyData);
+            XLSX.utils.book_append_sheet(wb, historyWs, 'Test History');
+        }
+        
+        // Add incorrect answers sheet if there's data
+        if (incorrectAnswersData.length > 1) {
+            const incorrectWs = XLSX.utils.aoa_to_sheet(incorrectAnswersData);
+            XLSX.utils.book_append_sheet(wb, incorrectWs, 'Incorrect Answers');
+        }
+        
+        // Generate Excel file and trigger download
+        XLSX.writeFile(wb, 'quiz_user_data.xlsx');
+        console.log("Excel file generated and download started");
+    } catch (error) {
+        console.error("Error exporting user data:", error);
+        alert("Error exporting data: " + error.message);
+    }
+}
+
+// Load user data in admin panel - FIXED COMPLETE VERSION
 function loadUserData() {
+    console.log("Loading user data to admin panel");
     usersContainer.innerHTML = '';
     
     const userIds = Object.keys(users);
+    console.log("User IDs found:", userIds);
     
     if (userIds.length === 0) {
         usersContainer.innerHTML = `
@@ -1236,117 +1125,249 @@ function loadUserData() {
             <th>Nickname</th>
             <th>Current Level</th>
             <th>Test History</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                `;
-                usersContainer.appendChild(table);
+            <th>Status</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    
+    // Create table body
+    const tbody = document.createElement('tbody');
+    
+    // Add each user to the table
+    userIds.forEach(userId => {
+        const user = users[userId];
+        const tr = document.createElement('tr');
+        
+        // Format National ID for display
+        let formattedId = user.nationalId;
+        if (formattedId && formattedId.length === 13) {
+            formattedId = formattedId.substring(0, 1) + '-' +
+                        formattedId.substring(1, 5) + '-' +
+                        formattedId.substring(5, 10) + '-' +
+                        formattedId.substring(10, 12) + '-' +
+                        formattedId.substring(12);
+        }
+        
+        // Check if the user has a completion title (from level 10)
+        let completionTitle = '';
+        if (user.history && user.history.length > 0) {
+            // Get the last test
+            const lastTest = user.history[user.history.length - 1];
+            if (lastTest && lastTest.completionTitle) {
+                completionTitle = lastTest.completionTitle;
             }
-// Save users to Firebase
-function saveUsersToStorage() {
-    console.log("Attempting to save users to Firebase:", users);
-    
-    // Add a timestamp for when this save was made
-    const saveData = {
-        ...users,
-        lastUpdated: new Date().toISOString()
-    };
-    
-    return database.ref('users').set(saveData)
-        .then(() => {
-            console.log("User data saved successfully to Firebase");
-            return true; // Return success
-        })
-        .catch((error) => {
-            console.error("Error saving users to Firebase:", error);
-            alert("There was an error saving user data. Please try again.");
-            return false; // Return failure
-        });
-}
-
-// Save questions to Firebase
-function saveQuestionsToStorage() {
-    console.log("Attempting to save questions to Firebase");
-    
-    return database.ref('questions').set(allQuestions)
-        .then(() => {
-            console.log("Questions saved successfully to Firebase");
-            return true; // Return success
-        })
-        .catch((error) => {
-            console.error("Error saving questions to Firebase:", error);
-            alert("There was an error saving questions. Please try again.");
-            return false; // Return failure
-        });
-}
-
-// Handle registration with improved Firebase interaction
-function handleRegistration() {
-    const nationalId = nationalIdInput.value.trim();
-    const firstName = firstNameInput.value.trim();
-    const lastName = lastNameInput.value.trim();
-    const nickName = nickNameInput.value.trim();
-    
-    // Validate inputs
-    if (nationalId.length !== 13) {
-        idError.textContent = 'National ID must be exactly 13 digits';
-        return;
-    }
-    
-    if (!firstName || !lastName) {
-        alert('Please enter your first name and last name');
-        return;
-    }
-    
-    // Create or update user
-    const userId = nationalId;
-    
-    if (!users[userId]) {
-        // New user
-        users[userId] = {
-            nationalId: nationalId,
-            firstName: firstName,
-            lastName: lastName,
-            nickName: nickName,
-            level: 1,  // Always start at level 1
-            history: [],
-            completed: false, // New flag to track completion status
-            createdAt: new Date().toISOString() // Add creation timestamp
-        };
-        console.log("Created new user:", users[userId]);
-    } else {
-        // Existing user - update info but keep level
-        users[userId].firstName = firstName;
-        users[userId].lastName = lastName;
-        users[userId].nickName = nickName;
-        users[userId].updatedAt = new Date().toISOString(); // Add update timestamp
-        
-        console.log("Updated existing user:", users[userId]);
-        
-        // Check if user has already completed the program
-        if (users[userId].completed) {
-            alert("You have already completed all tests. Thank you for participating!");
-            showWelcomeScreen();
-            return;
         }
-    }
-    
-    // Set current user
-    currentUser = users[userId];
-    
-    // Save users to Firebase with proper feedback
-    saveUsersToStorage().then((success) => {
-        if (success) {
-            console.log("User data saved, starting quiz");
-            // Start the quiz directly
-            startQuiz();
-        } else {
-            // Handle the case where saving failed
-            console.error("Failed to save user data");
-            alert("User registration failed. Please try again.");
-        }
+        
+        tr.innerHTML = `
+            <td>${formattedId || 'N/A'}</td>
+            <td>${user.firstName || 'N/A'}</td>
+            <td>${user.lastName || 'N/A'}</td>
+            <td>${user.nickName || '-'}</td>
+            <td>${user.level || '1'}</td>
+            <td>${user.history && user.history.length ? user.history.length + ' tests' : 'No tests taken'}</td>
+            <td>${user.completed ? (completionTitle ? 'Completed: ' + completionTitle : 'Completed') : 'In progress'}</td>
+        `;
+        
+        tbody.appendChild(tr);
     });
+    
+    table.appendChild(tbody);
+    usersContainer.appendChild(table);
+    console.log("User data table created with", userIds.length, "users");
+}
+// Initialize the app when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded");
+    debugElements();
+    
+    // Direct button handler attachment (ensures buttons work)
+    const startMainBtn = document.getElementById('start-main-btn');
+    const adminBtn = document.getElementById('admin-btn');
+    
+    if (startMainBtn) {
+        console.log("Found start button, attaching click handler");
+        startMainBtn.addEventListener('click', function() {
+            console.log("Start button clicked");
+            showRegistrationScreen();
+        });
+    } else {
+        console.error("Start button not found in DOM");
+    }
+    
+    if (adminBtn) {
+        console.log("Found admin button, attaching click handler");
+        adminBtn.addEventListener('click', function() {
+            console.log("Admin button clicked");
+            showAdminScreen();
+        });
+    } else {
+        console.error("Admin button not found in DOM");
+    }
+    
+    try {
+        // Check Firebase connection
+        checkFirebaseConnection();
+        // Then initialize the rest of the application
+        init();
+    } catch (e) {
+        console.error("Error during initialization:", e);
+    }
+});
+// Initialize the application
+function init() {
+    console.log("Initializing application...");
+    debugElements();
+    
+    // IMPORTANT: Do NOT re-attach event listeners for welcome screen buttons here
+    // They are already attached in the DOMContentLoaded event handler
+    
+    // Add event listeners - Registration Screen
+    if (readyBtn) {
+        console.log("Attaching click handler to 'Ready to be Tested' button");
+        readyBtn.addEventListener('click', handleRegistration);
+    } else {
+        console.error("Ready button not found in DOM");
+    }
+    
+    if (backToWelcomeBtn) {
+        console.log("Attaching click handler to back button on registration screen");
+        backToWelcomeBtn.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (nationalIdInput) {
+        console.log("Attaching input handler to national ID field");
+        nationalIdInput.addEventListener('input', validateNationalId);
+    }
+    
+    // Add event listeners - Start Screen
+    if (startQuizBtn) {
+        console.log("Attaching click handler to start quiz button");
+        startQuizBtn.addEventListener('click', startQuiz);
+    }
+    
+    if (logoutBtn) {
+        console.log("Attaching click handler to logout button");
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+    
+    // Add event listeners - Quiz Screen
+    if (submitBtn) {
+        console.log("Attaching click handler to submit answer button");
+        submitBtn.addEventListener('click', submitAnswer);
+    }
+    
+    // Add event listeners - Result Screen
+    if (continueBtn) {
+        console.log("Attaching click handler to continue button");
+        continueBtn.addEventListener('click', continueToNextLevel);
+    }
+    
+    // Add event listeners - Admin Screen
+    if (loginBtn) {
+        console.log("Attaching click handler to admin login button");
+        loginBtn.addEventListener('click', adminLoginHandler);
+    }
+    
+    if (adminBackBtnLogin) {
+        console.log("Attaching click handler to admin back button on login screen");
+        adminBackBtnLogin.addEventListener('click', showWelcomeScreen);
+    }
+    
+    if (adminBackBtn) {
+        console.log("Attaching click handler to admin back button");
+        adminBackBtn.addEventListener('click', showWelcomeScreen);
+    }
+    
+    // Add event listeners - Admin Tabs
+    if (singleQuestionTab) {
+        console.log("Attaching click handler to single question tab");
+        singleQuestionTab.addEventListener('click', () => {
+            setActiveTab('single-question-tab');
+            showAdminSection('single-question-section');
+        });
+    }
+    
+    if (batchQuestionTab) {
+        console.log("Attaching click handler to batch question tab");
+        batchQuestionTab.addEventListener('click', () => {
+            setActiveTab('batch-question-tab');
+            showAdminSection('batch-question-section');
+        });
+    }
+    
+    if (questionBankTab) {
+        console.log("Attaching click handler to question bank tab");
+        questionBankTab.addEventListener('click', () => {
+            setActiveTab('question-bank-tab');
+            showAdminSection('question-bank-section');
+        });
+    }
+    
+    if (userDataTab) {
+        console.log("Attaching click handler to user data tab");
+        userDataTab.addEventListener('click', () => {
+            setActiveTab('user-data-tab');
+            showAdminSection('user-data-section');
+            loadUserData();
+        });
+    }
+    
+    // Add event listeners - Question Management
+    if (addQuestionBtn) {
+        console.log("Attaching click handler to add question button");
+        addQuestionBtn.addEventListener('click', addNewQuestion);
+    }
+    
+    if (loadBatchFormBtn) {
+        console.log("Attaching click handler to load batch form button");
+        loadBatchFormBtn.addEventListener('click', () => {
+            showBatchQuestionInput();
+            if (saveBatchBtn) saveBatchBtn.classList.remove('hidden');
+        });
+    }
+    
+    if (saveBatchBtn) {
+        console.log("Attaching click handler to save batch button");
+        saveBatchBtn.addEventListener('click', saveBatchQuestions);
+    }
+    
+    if (loadBankBtn) {
+        console.log("Attaching click handler to load bank button");
+        loadBankBtn.addEventListener('click', loadQuestionBank);
+    }
+    
+    if (deleteSelectedBtn) {
+        console.log("Attaching click handler to delete selected button");
+        deleteSelectedBtn.addEventListener('click', deleteSelectedQuestions);
+    }
+    
+    // Add event listeners - User Data
+    if (exportUsersBtn) {
+        console.log("Attaching click handler to export users button");
+        exportUsersBtn.addEventListener('click', exportUserData);
+    }
+    
+    try {
+        // Load questions and users from Firebase
+        console.log("Loading data from Firebase");
+        Promise.all([
+            loadQuestionsFromStorage(),
+            loadUsersFromStorage()
+        ]).then(() => {
+            console.log("Data loaded successfully");
+            // Show welcome screen by default
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        }).catch(error => {
+            console.error("Error initializing app:", error);
+            // Still show welcome screen even if there's an error
+            hideAllScreens();
+            showScreen(welcomeScreen);
+        });
+    } catch (error) {
+        console.error("Error during app initialization:", error);
+        // Show welcome screen as fallback
+        hideAllScreens();
+        showScreen(welcomeScreen);
+    }
 }
